@@ -540,10 +540,9 @@ const updateVMOptions = async ()=>{
   try {
 
       const res = await time_data_store.get_vm_list(currentBusiness.value)
-      VMOptions.value = res.data.available_machine_ips.H
+      VMOptions.value = res.data.available_machine_ips.H  || []
       console.log("vm list is ", VMOptions.value)
- || []
-      
+
   } catch (e) {
       console.error('获取业务主机数据失败:', e)
   }
