@@ -135,6 +135,22 @@ function update_each_table(){
                                                 ...time_series_data.value.diskPred.filter(v => v !== null && !Number.isNaN(v))])
 
   
+  //异常检测
+  if (datasets.value['disk-chart'].y_max > 80) {
+    statusMap['disk-chart'] = '异常检测结果：当前磁盘资源存在异常(>80%)，请注意！';
+  } else {
+    statusMap['disk-chart'] = '异常检测结果：当前磁盘资源无异常';
+  }
+  if (datasets.value['mem-chart'].y_max > 80) {
+    statusMap['mem-chart'] = '异常检测结果：当前内存资源存在异常(>80%)，请注意！';
+  } else {
+    statusMap['mem-chart'] = '异常检测结果：当前内存资源无异常';
+  }
+  if (datasets.value['cpu-chart'].y_max > 80) {
+    statusMap['cpu-chart'] = '异常检测结果：当前CPU资源存在异常(>80%)，请注意！';
+  } else {
+    statusMap['cpu-chart'] = '异常检测结果：当前CPU资源无异常';
+  }
 
 
   // 重新渲染表格
