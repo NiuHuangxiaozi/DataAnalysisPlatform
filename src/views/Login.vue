@@ -51,7 +51,7 @@
       
       <!-- 登录提示 -->
       <div class="login-tips">
-        <p>提示：默认账号和密码均为 <strong>123</strong></p>
+        <p>提示：输入账号和密码</p>
         <p>或通过URL参数 <code>?token=bearer_token</code> 进行单点登录</p>
       </div>
     </div>

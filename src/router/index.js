@@ -10,7 +10,7 @@ import Business from '../views/Business.vue'
 import VM from '../views/VM.vue'
 
 // just for testcase
-import TestCase from '../views/Test.vue'
+// import TestCase from '../views/Test.vue'
 import { compile } from 'vue'
 
 const routes = [
@@ -33,10 +33,6 @@ const routes = [
         {
           path:"homedisplay",
           component: HomeDisplay
-        },
-        {
-          path:"test",
-          component: TestCase
         },
         {
           path:"inCaMa",
