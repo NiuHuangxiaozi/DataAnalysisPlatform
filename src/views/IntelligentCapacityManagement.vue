@@ -9,24 +9,17 @@
           <label for="businessSelector">业务系统：</label>
           <select id="businessSelector" v-model="selectedBusiness">
             <option value="">请选择业务系统</option>
-            <option value="营销客户服务平台">营销客户服务平台</option>
-          </select>
-        </div>
-        <div class="selector-item">
-          <label for="functionSelector">功能模块：</label>
-          <select
-            id="functionSelector"
-            v-model="selectedFunction"
-            :disabled="!selectedBusiness"
-          >
-            <option value="">请选择功能模块</option>
-            <option
-              v-for="(config, key) in marketingFunctionsData"
-              :key="key"
-              :value="key"
-            >
-              {{ key }}
-            </option>
+            
+            <!--  -->
+              <option
+                  v-for="biz in businessOptions"
+                  :key="biz"
+                  :value="biz"
+                >
+                  {{ biz }}
+              </option>`
+
+            <!--  -->
           </select>
         </div>
       </div>
@@ -76,6 +69,12 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount } from "vue";
 import * as echarts from "echarts";
+import {timeDataStore} from '../store/data'
+const time_data_store = timeDataStore()
+
+
+// 这里存储从后端拉来的所有业务名字
+const businessOptions = ref([])
 
 const selectedBusiness = ref("");
 const selectedFunction = ref("");
@@ -86,39 +85,30 @@ const vcpuValue = ref("-");
 const memoryValue = ref("-");
 const storageValue = ref("-");
 
-// 功能模块资源配置数据
+// 功能模块资源配置数据,这里是静态的数据
 const marketingFunctionsData = {
-  "营销系统计费中心_invoicing服务": { vCPU: 16, Memory: 32, Storage: 200 },
-  "营销系统市场化交易中心spotsettle": { vCPU: 8, Memory: 16, Storage: 150 },
-  "营销系统计费中心_calcengine服务": { vCPU: 32, Memory: 64, Storage: 300 },
-  "营销系统计费中心_bill服务": { vCPU: 16, Memory: 32, Storage: 200 },
-  "营销系统计费中心_calc服务": { vCPU: 16, Memory: 32, Storage: 250 },
-  "营销系统计费中心_assist服务": { vCPU: 8, Memory: 16, Storage: 100 },
-  "营销系统计费中心_mr服务": { vCPU: 8, Memory: 16, Storage: 150 },
-  "营销系统账务中心_check服务": { vCPU: 16, Memory: 32, Storage: 200 },
-  "营销系统计费中心_workorder服务": { vCPU: 8, Memory: 16, Storage: 100 },
-  "营销系统市场化交易中心_settle": { vCPU: 16, Memory: 32, Storage: 200 },
-  "营销系统账务中心_invoice服务": { vCPU: 16, Memory: 32, Storage: 150 },
-  "营销系统账务中心_charge服务": { vCPU: 16, Memory: 32, Storage: 200 },
-  "营销系统市场化交易中心_files服务": { vCPU: 8, Memory: 16, Storage: 500 },
-  "营销系统账务中心_arrears服务": { vCPU: 8, Memory: 16, Storage: 100 },
-  "营销系统账务中心_assist服务": { vCPU: 8, Memory: 16, Storage: 100 },
-  "营销系统市场化交易中心spotaccess": { vCPU: 8, Memory: 16, Storage: 150 },
-  "营销系统计费中心_mrplan服务": { vCPU: 8, Memory: 16, Storage: 100 },
-  "营销系统计费中心_elecprice服务": { vCPU: 8, Memory: 16, Storage: 100 },
-  "营销系统账务中心_bankpower服务": { vCPU: 8, Memory: 16, Storage: 100 },
-  "营销系统账务中心_costcntl服务": { vCPU: 8, Memory: 16, Storage: 100 },
+  "营销管理系统_营销管理系统": { vCPU: 16, Memory: 32, Storage: 200 }
 };
 
 // 更新可视化
-function updateVisualization(functionName, data) {
-  vcpuValue.value = `<span class="resource-highlight">${data.vCPU}</span> 核`;
-  memoryValue.value = `<span class="resource-highlight">${data.Memory}</span> GB`;
-  storageValue.value = `<span class="resource-highlight">${data.Storage}</span> GB`;
+async function updateVisualization(newBusiness, data) {
+
+
+  // 通过business name向后端索要数据
+  const resource_data = await time_data_store.get_resource_data(newBusiness)
+  const data_dict = resource_data.data.recommend_config[newBusiness]
+
+  console.log("data from bachend ", data_dict)
+
+
+  // 
+  vcpuValue.value = `<span class="resource-highlight">${data_dict["CPU"]}</span> 核`;
+  memoryValue.value = `<span class="resource-highlight">${data_dict["MEM"]/1024}</span> GB`;
+  storageValue.value = `<span class="resource-highlight">${data_dict["DISK"]}</span> GB`;
 
   const option = {
     title: {
-      text: `${functionName} 资源配置推荐`,
+      text: `${newBusiness} 资源配置推荐`,
       left: "center",
       textStyle: { fontSize: 16, fontWeight: "normal" },
     },
@@ -138,9 +128,9 @@ function updateVisualization(functionName, data) {
         name: "资源数量",
         type: "bar",
         data: [
-          { value: data.vCPU, itemStyle: { color: "#5470c6" } },
-          { value: data.Memory, itemStyle: { color: "#91cc75" } },
-          { value: data.Storage, itemStyle: { color: "#fac858" } },
+          { value: data_dict["CPU"], itemStyle: { color: "#5470c6" } },
+          { value: data_dict["MEM"]/1024, itemStyle: { color: "#91cc75" } },
+          { value: data_dict["DISK"], itemStyle: { color: "#fac858" } },
         ],
         label: { show: true, position: "top" },
       },
@@ -163,25 +153,29 @@ function resetVisualization() {
   });
 }
 
-// 监听选择变化
-watch(selectedFunction, (newVal) => {
-  if (newVal && marketingFunctionsData[newVal]) {
-    updateVisualization(newVal, marketingFunctionsData[newVal]);
-  } else {
-    resetVisualization();
-  }
-});
 
+
+
+// 监听业务的变化
 watch(selectedBusiness, (newVal) => {
   if (!newVal) {
     selectedFunction.value = "";
     resetVisualization();
   }
+  else{
+    updateVisualization(newVal)
+  }
 });
 
-onMounted(() => {
+onMounted(async () => {
   myChart = echarts.init(chartRef.value);
   resetVisualization();
+
+  // 加载所有业务对用的应用信息
+  const yw_business = await time_data_store.get_yw_business()
+  console.log(" 资源推荐的业务", yw_business.data.available_business)
+  businessOptions.value = yw_business.data.available_business
+  
   window.addEventListener("resize", () => myChart.resize());
 });
 

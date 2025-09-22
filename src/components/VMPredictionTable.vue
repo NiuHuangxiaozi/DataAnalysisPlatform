@@ -157,6 +157,8 @@ const Timestamps2TimeLabel = (time_stamp)=>{
   const label = `${time_date.getFullYear()}/${time_date.getMonth() + 1}/${time_date.getDate()}/${time_date.getHours()}:00`
   return label
 }
+
+
 // 从后端的一堆东西中提取数据
 function SelectUsefulData(time_series_entry){
 

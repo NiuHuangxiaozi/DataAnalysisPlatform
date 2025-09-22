@@ -141,7 +141,8 @@ function SelectUsefulData(time_series_entry){
     console.log(time_series_entry)
     // 统计序列长度
     let history_lengh = time_series_entry.data.prediction.series.length
-    let prediction_length = time_series_entry.data.prediction.predict_series.length
+    let prediction_length = time_series_entry.data.prediction.predict_series.DLinear.CPU.length
+    console.log("prediction_length" ,prediction_length)
     let total_length = history_lengh + prediction_length
 
     // 定义数据结构
@@ -272,8 +273,8 @@ const updateChart = async () => {
   console.log("currentBusiness.value", currentBusiness.value)
   try{
     const time_series = await time_data_store.get_bussiness_prediction(selectedGranularity.value, currentBusiness.value)
+    console.log("selectedData ", time_series)
     time_data_store.selectedData.value = SelectUsefulData(time_series);
-    console.log("selectedData ", time_data_store.selectedData.value.times)
   }
   catch(e){
     console.error("更新主表格的时候出错",e)

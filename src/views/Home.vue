@@ -87,10 +87,10 @@
 
 
             <!-- just for testcase -->
-            <MenuItem name="home">
+            <!-- <MenuItem name="home">
               <Icon type="ios-home" />
               <RouterLink to="/home/test">测试iview风格组件</RouterLink>
-            </MenuItem>
+            </MenuItem> -->
             </Menu>
         </Sider>
         

@@ -3,7 +3,7 @@ import axios from "axios";
 
 
 const api = axios.create({
-    baseURL: 'http://192.168.20.185:8000',
+    baseURL: 'http://192.168.20.89:8000',
     timeout:60000,
     headers:{
         'Content-Type': 'application/json'
@@ -56,6 +56,35 @@ export const timedataAPI = {
             dimension: dimension, // 对应接口的dimension查询参数
             business: business,     // 对应接口的business查询参数
             ip: ip
+        }
+      }
+    ),
+
+    // 获取业务对应的应用
+    get_available_business_yw : () => api.get("/jw/get_available_business_yw"),
+
+    get_resource_data : (newBusiness) => api.get("/jw/recommend_config",
+      {
+        params: {
+            business: newBusiness
+        }
+      }
+    ),
+
+    get_app_list : (business_name) => api.get("/jw/get_available_app",
+      {
+        params: {
+          business : business_name
+        }
+      }
+    ),
+    getAPPPrediction : (business_name, app_name, time_scale) => api.get(
+      "/jw/get_single_predict_app",
+      {
+        params : {
+          dimension: time_scale,
+          business: business_name,
+          app: app_name
         }
       }
     )
