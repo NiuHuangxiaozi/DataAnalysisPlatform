@@ -146,6 +146,7 @@ import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import * as echarts from 'echarts';
 import Algorithm from '../components/Algorithm.vue';
 import {timeDataStore} from '../store/data'
+import { elements } from 'chart.js';
 const time_data_store = timeDataStore()
 
 
@@ -325,6 +326,7 @@ function SelectUsefulData(time_series_entry){
     // 加载某一种算法的预测序列
     if(selectedAlgorithm.value == "DLinear"){
       console.log("算法转化为DLinear")
+      apdex_pred_list = predict_lists.DLinear.apdex
       average_response_time_pred_list = predict_lists.DLinear.average_response_time
       request_failed_rate_pred_list = predict_lists.DLinear.request_failed_rate
       request_total_count_list = predict_lists.DLinear.request_total_count
@@ -332,12 +334,14 @@ function SelectUsefulData(time_series_entry){
     }
     else if (selectedAlgorithm.value == "MEMA"){
       console.log("算法转化为MEMA")
+      apdex_pred_list = predict_lists.MEMA.apdex
       average_response_time_pred_list = predict_lists.MEMA.average_response_time
       request_failed_rate_pred_list = predict_lists.MEMA.request_failed_rate
       request_total_count_list = predict_lists.MEMA.request_total_count
     }
 
     // 为了保证预测数据和历史数据的衔接，这里我们的Pred后缀结尾的数组要保留一个历史真实数据
+    apdexPred[apdex_idx-1] = history_lists.apdex.series[apdex_idx-1][1]
     average_response_time_Pred[average_response_time_idx-1] = history_lists.average_response_time.series[average_response_time_idx-1][1]
     request_failed_rate_Pred[request_failed_rate_idx-1] = history_lists.request_failed_rate.series[request_failed_rate_idx-1][1]
     request_total_count_Pred[request_total_count_idx-1] = history_lists.request_total_count.series[request_total_count_idx-1][1]
@@ -345,6 +349,11 @@ function SelectUsefulData(time_series_entry){
     
     // 加载预测数据
     // 响应预测数据
+    apdex_pred_list.forEach(element =>   {
+        apdexPred[apdex_idx] = element[1]
+        apdex_idx = apdex_idx + 1
+    })
+
     average_response_time_pred_list.forEach(element => {
       average_response_time_Pred[average_response_time_idx] = element[1]
       times[average_response_time_idx]=Timestamps2TimeLabel(element[0])
