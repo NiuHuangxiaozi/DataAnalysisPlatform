@@ -94,8 +94,8 @@
             <Icon type="ios-timer-outline" /> 平均响应时间预测与检测
           </template>
           <div ref="responseTimeChart" class="chart-container"></div>
-          <Alert type="success" show-icon :closable="false" style="margin-top: 10px;">
-            异常检测结果：当前响应时间无异常
+          <Alert :type="average_response_time_alert_type" show-icon :closable="false" style="margin-top: 10px;">
+            {{ average_response_time_alert_message }}
           </Alert>
         </Card>
       </Col>
@@ -106,8 +106,8 @@
             <Icon type="ios-analytics-outline" /> apdex预测与检测
           </template>
           <div ref="memChart" class="chart-container"></div>
-          <Alert type="success" show-icon :closable="false" style="margin-top: 10px;">
-            异常检测结果：当前apdex无异常
+          <Alert :type="apdex_alert_type" show-icon :closable="false" style="margin-top: 10px;">
+            {{ apdex_alert_message }}
           </Alert>
         </Card>
       </Col>
@@ -118,8 +118,8 @@
             <Icon type="ios-close-circle-outline" /> 当前错误率预测与检测
           </template>
           <div ref="diskChart" class="chart-container"></div>
-          <Alert type="success" show-icon :closable="false" style="margin-top: 10px;">
-            异常检测结果：当前错误率为正常状态
+          <Alert :type="request_error_rate_alert_type" show-icon :closable="false" style="margin-top: 10px;">
+           {{ request_error_rate_alert_message }}
           </Alert>
         </Card>
       </Col>
@@ -130,8 +130,8 @@
             <Icon type="ios-pulse" /> 吞吐量预测与检测
           </template>
           <div ref="networkChart" class="chart-container"></div>
-          <Alert type="success" show-icon :closable="false" style="margin-top: 10px;">
-            异常检测结果：当前吞吐量无异常
+          <Alert :type="request_total_count_alert_type" show-icon :closable="false" style="margin-top: 10px;">
+            {{ request_total_count_alert_message }}
           </Alert>
         </Card>
       </Col>
@@ -198,6 +198,18 @@ let diskChartInstance = null;
 let networkChartInstance = null;
 let realAllChartInstance = null;
 let predictAllChartInstance = null;
+
+//显示4个表格是否是异常的
+const average_response_time_alert_type = ref('success')
+const apdex_alert_type = ref('success')
+const request_error_rate_alert_type = ref('success')
+const request_total_count_alert_type = ref('success')
+
+const average_response_time_alert_message = ref("异常检测结果：当前响应时间无异常")
+const apdex_alert_message = ref("异常检测结果：当前apdex无异常")
+const request_error_rate_alert_message = ref("异常检测结果：当前错误率为正常状态")
+const request_total_count_alert_message =ref("异常检测结果：当前吞吐量无异常")
+
 
 
 
@@ -412,7 +424,15 @@ function SelectUsefulData(time_series_entry){
     request_total_count_range[0]=Math.min(...tmp_request_total_count)
     request_total_count_range[1]=Math.max(...tmp_request_total_count)
 
-
+    let apdex_pred_max = Math.max(...apdexPred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
+    let average_response_time_pred_max = Math.max(...average_response_time_Pred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
+    let request_failed_rate_pred_max = Math.max(...request_failed_rate_Pred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
+    let request_total_count_pred_max = Math.max(...request_total_count_Pred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
+    
+    let apdex_pred_min = Math.min(...apdexPred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
+    let average_response_time_pred_min = Math.min(...average_response_time_Pred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
+    let request_failed_rate_pred_min = Math.min(...request_failed_rate_Pred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
+    let request_total_count_pred_min = Math.min(...request_total_count_Pred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
     return { times,
              apdex,
              request_total_count,
@@ -425,7 +445,16 @@ function SelectUsefulData(time_series_entry){
              apdex_range,
              average_response_time_range,
              request_failed_rate_range,
-             request_total_count_range};
+             request_total_count_range,
+              apdex_pred_max,
+              average_response_time_pred_max,
+              request_failed_rate_pred_max,
+              request_total_count_pred_max,
+              apdex_pred_min,
+              average_response_time_pred_min,
+              request_failed_rate_pred_min,
+              request_total_count_pred_min,
+            };
 }
 
 const updateCharts = async () => {
@@ -445,6 +474,47 @@ const updateCharts = async () => {
   catch(e){
     console.error("拉取应用对应的数据",e)
   }
+
+
+  // 显示异常的逻辑
+  if(loaded_app_data.value.apdex_pred_min<0.6){
+    apdex_alert_message.value = "请注意，当前用户性能指数(apdex_低于0.6，用户体验较差"
+    apdex_alert_type.value = "error"
+  }
+  else{
+    apdex_alert_message.value = "当前用户性能指数(apdex)正常，没有异常"
+    apdex_alert_type.value = "success"
+  }
+
+  if(loaded_app_data.value.average_response_time_pred_max>1000){
+    average_response_time_alert_message.value = "出现异常，当前业务应用平均响应时间超过1000ms，请及时检查"
+    average_response_time_alert_type.value = "error"
+  }
+  else{
+    average_response_time_alert_message.value = "没有异常，当前业务应用平均响应时间小于1000ms"
+    average_response_time_alert_type.value = "success"
+  }
+
+  if(loaded_app_data.value.request_failed_rate_pred_max > 0.2){
+    request_error_rate_alert_message.value = "出现异常，当前业务应用请求错误率超过20%，请及时检查"
+    request_error_rate_alert_type.value = "error"
+  }
+  else{
+    request_error_rate_alert_message.value = "没有异常，当前业务应用请求错误率较低"
+    request_error_rate_alert_type.value = "success"
+  }
+
+
+  if(loaded_app_data.value.request_total_count_pred_max > 20000){
+    request_total_count_alert_message.value = "出现异常，当前业务应用请求吞吐量超过20000次，应用服务负载较高，压力较大"
+    request_total_count_alert_type.value = "error"
+  }
+  else{
+    request_total_count_alert_message.value = "没有异常，当前业务应用负载压力小"
+    request_total_count_alert_type.value = "success"
+  }
+
+
 
 
   const timeLabels = generateTimeLabels(selectedTime.value);
@@ -693,7 +763,7 @@ const handleResize = () => {
 const updatebusinessOptions = async ()=>{
   try {
 
-      const res = await time_data_store.get_business_list()
+      const res = await time_data_store.get_yw_business()
       businessOptions.value = res.data.available_business || []
 
   } catch (e) {

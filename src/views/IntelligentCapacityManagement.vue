@@ -172,7 +172,7 @@ onMounted(async () => {
   resetVisualization();
 
   // 加载所有业务对用的应用信息
-  const yw_business = await time_data_store.get_yw_business()
+  const yw_business = await time_data_store.get_business_list()
   console.log(" 资源推荐的业务", yw_business.data.available_business)
   businessOptions.value = yw_business.data.available_business
   
