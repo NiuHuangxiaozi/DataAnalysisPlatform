@@ -557,7 +557,7 @@ const updateCharts = async () => {
       legend: { data: ['当前apdex', '预测apdex'] },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: loaded_app_data.value.times },
-      yAxis: { type: 'value', name: 'apdex', min: loaded_app_data.value.apdex_range[0] , max: loaded_app_data.value.apdex_range[1] },
+      yAxis: { type: 'value', name: 'apdex', min: Math.floor(loaded_app_data.value.apdex_range[0]) , max: Math.ceil(loaded_app_data.value.apdex_range[1]) },
       series: [
         {
           name: '当前apdex',
@@ -587,7 +587,7 @@ const updateCharts = async () => {
       legend: { data: ['当前错误率', '预测错误率'] },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: loaded_app_data.value.times },
-      yAxis: { type: 'value', name: '错误率(%)', min: loaded_app_data.value.request_failed_rate_range[0], max: loaded_app_data.value.request_failed_rate_range[1] },
+      yAxis: { type: 'value', name: '错误率(%)', min: Math.floor(loaded_app_data.value.request_failed_rate_range[0]), max: Math.ceil(loaded_app_data.value.request_failed_rate_range[1]) },
       series: [
         {
           name: '当前错误率',
@@ -617,7 +617,7 @@ const updateCharts = async () => {
       legend: { data: ['当前吞吐量', '预测吞吐量'] },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: loaded_app_data.value.times },
-      yAxis: { type: 'value', name: '吞吐量',   min:loaded_app_data.value.request_total_count_range[0], max: loaded_app_data.value.request_total_count_range[1] },
+      yAxis: { type: 'value', name: '吞吐量',   min: Math.floor(loaded_app_data.value.request_total_count_range[0]), max: Math.ceil(loaded_app_data.value.request_total_count_range[1]) },
       series: [
         {
           name: '当前吞吐量',

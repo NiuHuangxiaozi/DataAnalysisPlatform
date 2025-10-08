@@ -8,6 +8,7 @@ import Payload from '../views/Payload.vue'
 import ElasticScaling from '../views/ResourceElasticScaling.vue'
 import Business from '../views/Business.vue'
 import VM from '../views/VM.vue'
+import COR from  '../views/Cor.vue'
 
 // just for testcase
 // import TestCase from '../views/Test.vue'
@@ -53,6 +54,10 @@ const routes = [
         {
           path: "vm",
           component: VM
+        },
+        {
+          path: "cor",
+          component: COR
         }
     ]
   }

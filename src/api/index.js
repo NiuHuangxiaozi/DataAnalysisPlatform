@@ -3,7 +3,7 @@ import axios from "axios";
 
 
 const api = axios.create({
-    baseURL: 'http://10.134.83.22:3000',
+    baseURL: 'http://192.168.20.98:8000',
     timeout:60000,
     headers:{
         'Content-Type': 'application/json'
@@ -87,5 +87,7 @@ export const timedataAPI = {
           app: app_name
         }
       }
-    )
+    ),
+    getCorData :()=> api.get("/jw/get_corr_data"),
+    getCors :()=> api.get("/jw/get_corr_result")
 }

@@ -67,6 +67,17 @@ export const timeDataStore = defineStore(
             const apps_data =  await  timedataAPI.getAPPPrediction(business_name,app_name,time_scale)
             return apps_data
         }
+
+
+        // 相关性分析
+        const get_cor_data = async () => {
+            const cor_data = await timedataAPI.getCorData()
+            return cor_data
+        }
+        const get_cors = async () => {
+            const cors = await timedataAPI.getCors()
+            return cors
+        }
         return {
             get_business_list,
             get_vm_list,
@@ -77,7 +88,9 @@ export const timeDataStore = defineStore(
             get_resource_data,
             get_app_data,
             get_app_prediction,
-            selectedData
+            selectedData,
+            get_cor_data,
+            get_cors
         }
     }
 )
