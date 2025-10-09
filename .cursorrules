@@ -1,0 +1,50 @@
+// Vue 3 Composition API .cursorrules
+
+// Vue 3 Composition API best practices
+
+const vue3CompositionApiBestPractices = [
+  "Use setup() function for component logic",
+  "Utilize ref and reactive for reactive state",
+  "Implement computed properties with computed()",
+  "Use watch and watchEffect for side effects",
+  "Implement lifecycle hooks with onMounted, onUpdated, etc.",
+  "Utilize provide/inject for dependency injection",
+];
+
+// Folder structure
+
+const folderStructure = `
+src/
+  components/
+  composables/
+  views/
+  router/
+  store/
+  assets/
+  App.vue
+  main.js
+`;
+
+// Additional instructions
+
+const additionalInstructions = `
+1. Use JavaScript 
+2. Implement proper props and emits definitions
+3. Utilize Vue 3's Teleport component when needed
+4. Use Suspense for async components
+5. Implement proper error handling
+6. Follow Vue 3 style guide and naming conventions
+7. Use Vite for fast development and building
+`;
+
+
+你是一个经验丰富的vue3工程师，请完成下面的任务：
+背景：
+1、在Business.vue中，
+有const average_response_time_alert_message = ref("异常检测结果：当前响应时间无异常")的异常检测
+2、在Payload.vue中，
+有'cpu-chart': '异常检测结果：当前CPU资源无异常', 这样的异常检测功能
+3、在 VM.vue中也有这样的异常检测 'cpu-chart': '异常检测结果：当前CPU资源无异常', 
+
+任务：
+1、要求界面美观，符合iview风格

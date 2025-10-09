@@ -86,6 +86,12 @@
             </Submenu>
 
 
+            <!-- 异常检测 -->
+            <MenuItem name="anomaly">
+              <Icon type="ios-alert" />
+              <RouterLink to="/home/anomaly">异常检测中心</RouterLink>
+            </MenuItem>
+
             <!-- just for testcase -->
             <MenuItem name="cor">
               <Icon type="ios-home" />

@@ -9,6 +9,7 @@ import ElasticScaling from '../views/ResourceElasticScaling.vue'
 import Business from '../views/Business.vue'
 import VM from '../views/VM.vue'
 import COR from  '../views/Cor.vue'
+import Anomaly from '../views/Anomaly.vue'
 
 // just for testcase
 // import TestCase from '../views/Test.vue'
@@ -58,6 +59,10 @@ const routes = [
         {
           path: "cor",
           component: COR
+        },
+        {
+          path: "anomaly",
+          component: Anomaly
         }
     ]
   }
