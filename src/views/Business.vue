@@ -67,8 +67,6 @@
             <span style="white-space: nowrap;">视图选择：</span>
             <Select v-model="selectedTime" style="width: 120px;">
               <Option value="H">小时</Option>
-              <Option value="D">天</Option>
-              <Option value="M">月</Option>
             </Select>
           </Space>
         </Col>
@@ -146,7 +144,6 @@ import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import * as echarts from 'echarts';
 import Algorithm from '../components/Algorithm.vue';
 import {timeDataStore} from '../store/data'
-import { elements } from 'chart.js';
 const time_data_store = timeDataStore()
 
 
@@ -549,7 +546,7 @@ const updateCharts = async () => {
     });
   }
 
-  // Memory图表
+  // apdex图表
   if (memChart.value) {
     memChartInstance = echarts.init(memChart.value);
     memChartInstance.setOption({
@@ -579,7 +576,7 @@ const updateCharts = async () => {
     });
   }
 
-  // Disk图表
+  // error rate图表
   if (diskChart.value) {
     diskChartInstance = echarts.init(diskChart.value);
     diskChartInstance.setOption({
@@ -587,7 +584,7 @@ const updateCharts = async () => {
       legend: { data: ['当前错误率', '预测错误率'] },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: loaded_app_data.value.times },
-      yAxis: { type: 'value', name: '错误率(%)', min: Math.floor(loaded_app_data.value.request_failed_rate_range[0]), max: Math.ceil(loaded_app_data.value.request_failed_rate_range[1]) },
+      yAxis: { type: 'value', name: '错误率', min: Math.floor(loaded_app_data.value.request_failed_rate_range[0]), max: Math.ceil(loaded_app_data.value.request_failed_rate_range[1]) },
       series: [
         {
           name: '当前错误率',

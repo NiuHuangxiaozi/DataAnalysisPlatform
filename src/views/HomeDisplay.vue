@@ -69,7 +69,7 @@
         <Button type="default" @click="handleConfirm" long>确定</Button>
       </Col>
       <!-- 设置图标 -->
-      <Col :span="1" class="form-item settings">
+      <!-- <Col :span="1" class="form-item settings">
         <Button
           type="text"
           @click="handleSettings"
@@ -77,7 +77,7 @@
         >
           <Icon type="ios-settings" :size="20" />
         </Button>
-      </Col>
+      </Col> -->
     </Row>
 
     <!-- 信息提示行 -->

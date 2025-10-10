@@ -19,7 +19,7 @@ export const useAuthStore = defineStore('auth', {
     async login(username, password) {
       try {
         // 简单的账号密码验证 (账号密码都是123)
-        if (username === '123' && password === '123') {
+        if (username === 'TSResourceUser' && password === 'SZptkj@#0305') {
           this.isAuthenticated = true
           this.user = { username }
           this.token = 'mock-token'

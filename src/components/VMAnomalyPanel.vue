@@ -30,7 +30,7 @@
 
     <!-- 信息提示 -->
     <Alert type="info" show-icon style="margin-bottom: 20px;" v-if="selectedBusiness">
-      当前展示<strong>{{ selectedBusiness }}</strong>业务下各主机基础设施资源的异常检测结果
+      当前展示<strong>{{ selectedBusiness }}</strong>业务下各主机基础设施资源的异常检测结果, 利用率超过80%会被检测为异常
     </Alert>
 
     <!-- 加载状态 -->
