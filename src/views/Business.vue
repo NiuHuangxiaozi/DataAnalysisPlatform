@@ -383,6 +383,65 @@ function SelectUsefulData(time_series_entry){
     })
 
 
+    // 这里加载和处理历史预测数据 ====
+
+    // 1.定义存储数据的序列
+    const history_apdex_Pred = Array.from({ length: total_length }, () => null) 
+    const history_average_response_time_Pred = Array.from({ length: total_length }, () => null) 
+    const history_request_failed_rate_Pred = Array.from({ length: total_length }, () => null)
+    const history_request_total_count_Pred = Array.from({ length: total_length }, () => null)
+
+    // 2.获取后端对应的数据序列
+    let history_apdex_pred;
+    let history_average_response_time_pred;
+    let history_request_failed_rate_pred;
+    let history_request_total_count_pred;
+
+    // 3.按照不同的算法进行不同的加载
+    if(selectedAlgorithm.value == "DLinear"){
+      console.log("AMP 数据：算法转化为DLinear")
+      history_apdex_pred = time_series_entry.data.prediction.history_series.DLinear.apdex
+      history_average_response_time_pred = time_series_entry.data.prediction.history_series.DLinear.average_response_time
+      history_request_failed_rate_pred = time_series_entry.data.prediction.history_series.DLinear.request_failed_rate
+      history_request_total_count_pred = time_series_entry.data.prediction.history_series.DLinear.request_total_count
+
+    }
+    else if (selectedAlgorithm.value == "MEMA"){
+      console.log("AMP数据：算法转化为MEMA")
+      history_apdex_pred = time_series_entry.data.prediction.history_series.MEMA.apdex
+      history_average_response_time_pred = time_series_entry.data.prediction.history_series.MEMA.average_response_time
+      history_request_failed_rate_pred = time_series_entry.data.prediction.history_series.MEMA.request_failed_rate
+      history_request_total_count_pred = time_series_entry.data.prediction.history_series.MEMA.request_total_count
+    }
+
+    // 4.找到对应起始的index
+    let history_apdex_Pred_idx = history_lengh - history_apdex_pred.length
+    let history_average_response_time_Pred_idx = history_lengh - history_average_response_time_pred.length
+    let history_request_failed_rate_Pred_idx = history_lengh - history_request_failed_rate_pred.length
+    let history_request_total_count_Pred_idx = history_lengh - history_request_total_count_pred.length
+
+    // 4.加载历史预测数据
+    history_apdex_pred.forEach(element => {
+      history_apdex_Pred[history_apdex_Pred_idx] = element[1]
+      history_apdex_Pred_idx = history_apdex_Pred_idx + 1
+    })
+
+    history_average_response_time_pred.forEach(element => {
+      history_average_response_time_Pred[history_average_response_time_Pred_idx] = element[1]
+      history_average_response_time_Pred_idx = history_average_response_time_Pred_idx + 1
+    })
+
+    history_request_failed_rate_pred.forEach(element => {
+      history_request_failed_rate_Pred[history_request_failed_rate_Pred_idx] = element[1]
+      history_request_failed_rate_Pred_idx = history_request_failed_rate_Pred_idx + 1
+    })
+
+    history_request_total_count_pred.forEach(element => {
+      history_request_total_count_Pred[history_request_total_count_Pred_idx] = element[1]
+      history_request_total_count_Pred_idx = history_request_total_count_Pred_idx + 1
+    })
+
+    // 历史预测数据处理结束 ====
 
     // y刻度的范围,// 求出最大值和最小值, 方便y轴渲染
     let apdex_range= [0,0]
@@ -393,21 +452,25 @@ function SelectUsefulData(time_series_entry){
     let tmp_apdex = [
       ...apdex.filter(v => v !== null && !Number.isNaN(v)),
       ...apdexPred.filter(v => v !== null && !Number.isNaN(v)),
+      ...history_apdex_Pred.filter(v => v !== null && !Number.isNaN(v)),
     ]
     
     let tmp_average_response_time = [
       ...average_response_time.filter(v => v !== null && !Number.isNaN(v)),
       ...average_response_time_Pred.filter(v => v !== null && !Number.isNaN(v)),
+      ...history_average_response_time_Pred.filter(v => v !== null && !Number.isNaN(v)),
     ]
 
     let tmp_request_failed_rate = [
       ...request_failed_rate.filter(v => v !== null && !Number.isNaN(v)),
       ...request_failed_rate_Pred.filter(v => v !== null && !Number.isNaN(v)),
+      ...history_request_failed_rate_Pred.filter(v => v !== null && !Number.isNaN(v)),
     ]
 
     let tmp_request_total_count = [
       ...request_total_count.filter(v => v !== null && !Number.isNaN(v)),
       ...request_total_count_Pred.filter(v => v !== null && !Number.isNaN(v)),
+      ...history_request_total_count_Pred.filter(v => v !== null && !Number.isNaN(v)),
     ]
     apdex_range[0]=Math.min(...tmp_apdex)
     apdex_range[1]=Math.max(...tmp_apdex)
@@ -439,18 +502,27 @@ function SelectUsefulData(time_series_entry){
              request_total_count_Pred,
              average_response_time_Pred,
              request_failed_rate_Pred, 
+             history_apdex_Pred,
+             history_average_response_time_Pred,
+             history_request_failed_rate_Pred,
+             history_request_total_count_Pred,
+
              apdex_range,
              average_response_time_range,
              request_failed_rate_range,
              request_total_count_range,
+
               apdex_pred_max,
               average_response_time_pred_max,
               request_failed_rate_pred_max,
               request_total_count_pred_max,
+
               apdex_pred_min,
               average_response_time_pred_min,
               request_failed_rate_pred_min,
               request_total_count_pred_min,
+
+
             };
 }
 
@@ -521,7 +593,7 @@ const updateCharts = async () => {
     responseTimeChartInstance = echarts.init(responseTimeChart.value);
     responseTimeChartInstance.setOption({
       tooltip: { trigger: 'axis' },
-      legend: { data: ['当前响应时间', '预测响应时间'] },
+      legend: { data: ['当前响应时间', '预测响应时间', '历史预测响应时间'] },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: loaded_app_data.value.times },
       yAxis: { type: 'value', name: '响应时间(ms)' },
@@ -541,6 +613,14 @@ const updateCharts = async () => {
           smooth: true,
           itemStyle: { color: '#19be6b' },
           lineStyle: { type: 'dashed' }
+        },
+        {
+          name: '历史预测响应时间',
+          type: 'line',
+          data: loaded_app_data.value.history_average_response_time_Pred,
+          smooth: true,
+          itemStyle: { color: '#ed4014' },
+          lineStyle: { type: 'solid' }
         }
       ]
     });
@@ -551,10 +631,13 @@ const updateCharts = async () => {
     memChartInstance = echarts.init(memChart.value);
     memChartInstance.setOption({
       tooltip: { trigger: 'axis' },
-      legend: { data: ['当前apdex', '预测apdex'] },
+      legend: { data: ['当前apdex', '预测apdex', '历史预测apdex'] },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: loaded_app_data.value.times },
-      yAxis: { type: 'value', name: 'apdex', min: Math.floor(loaded_app_data.value.apdex_range[0]) , max: Math.ceil(loaded_app_data.value.apdex_range[1]) },
+      yAxis: { type: 'value',
+               name: 'apdex',
+               min: Math.floor(loaded_app_data.value.apdex_range[0]) ,
+               max: Math.ceil(loaded_app_data.value.apdex_range[1]) },
       series: [
         {
           name: '当前apdex',
@@ -571,6 +654,14 @@ const updateCharts = async () => {
           smooth: true,
           itemStyle: { color: '#ed4014' },
           lineStyle: { type: 'dashed' }
+        },
+        {
+          name: '历史预测apdex',
+          type: 'line',
+          data: loaded_app_data.value.history_apdex_Pred,
+          smooth: true,
+          itemStyle: { color: '#2d8cf0' },
+          lineStyle: { type: 'solid' }
         }
       ]
     });
@@ -581,7 +672,7 @@ const updateCharts = async () => {
     diskChartInstance = echarts.init(diskChart.value);
     diskChartInstance.setOption({
       tooltip: { trigger: 'axis' },
-      legend: { data: ['当前错误率', '预测错误率'] },
+      legend: { data: ['当前错误率', '预测错误率','历史预测错误率'] },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: loaded_app_data.value.times },
       yAxis: { type: 'value', name: '错误率', min: Math.floor(loaded_app_data.value.request_failed_rate_range[0]), max: Math.ceil(loaded_app_data.value.request_failed_rate_range[1]) },
@@ -601,6 +692,14 @@ const updateCharts = async () => {
           smooth: true,
           itemStyle: { color: '#e74c3c' },
           lineStyle: { type: 'dashed' }
+        },
+        {
+          name: '历史预测错误率',
+          type: 'line',
+          data: loaded_app_data.value.history_request_failed_rate_Pred,
+          smooth: true,
+          itemStyle: { color: '#ed4014' },
+          lineStyle: { type: 'solid' }
         }
       ]
     });
@@ -611,7 +710,7 @@ const updateCharts = async () => {
     networkChartInstance = echarts.init(networkChart.value);
     networkChartInstance.setOption({
       tooltip: { trigger: 'axis' },
-      legend: { data: ['当前吞吐量', '预测吞吐量'] },
+      legend: { data: ['当前吞吐量', '预测吞吐量', '历史预测吞吐量'] },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: loaded_app_data.value.times },
       yAxis: { type: 'value', name: '吞吐量',   min: Math.floor(loaded_app_data.value.request_total_count_range[0]), max: Math.ceil(loaded_app_data.value.request_total_count_range[1]) },
@@ -631,6 +730,14 @@ const updateCharts = async () => {
           smooth: true,
           itemStyle: { color: '#3498db' },
           lineStyle: { type: 'dashed' }
+        },
+        {
+          name: '历史预测吞吐量',
+          type: 'line',
+          data: loaded_app_data.value.history_request_total_count_Pred,
+          smooth: true,
+          itemStyle: { color: '#ed4014' },
+          lineStyle: { type: 'solid' }
         }
       ]
     });

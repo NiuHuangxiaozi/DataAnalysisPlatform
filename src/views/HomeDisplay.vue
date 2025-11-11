@@ -137,12 +137,13 @@ const Timestamps2TimeLabel = (time_stamp)=>{
 // 从后端的一堆东西中提取数据
 function SelectUsefulData(time_series_entry){
 
-
+    console.log("SelectUsefulData========================")
     console.log(time_series_entry)
+    console.log("SelectUsefulData =================================================")
+
     // 统计序列长度
-    let history_lengh = time_series_entry.data.prediction.series.length
-    let prediction_length = time_series_entry.data.prediction.predict_series.DLinear.CPU.length
-    console.log("prediction_length" ,prediction_length)
+    const  history_lengh = time_series_entry.data.prediction.series.CPU.length
+    const  prediction_length = time_series_entry.data.prediction.predict_series.DLinear.CPU.length
     let total_length = history_lengh + prediction_length
 
     // 定义数据结构
@@ -159,12 +160,15 @@ function SelectUsefulData(time_series_entry){
     
     const diskPred = Array.from({ length: total_length }, () => null) // 磁盘预测数组：默认0
 
+
+
     // y刻度的范围
     let y_range = [0,100]
 
 
     let history_lists = time_series_entry.data.prediction.series
     let predict_lists = time_series_entry.data.prediction.predict_series
+    
 
     // 加载历史序列
     let cpu_idx = 0 
@@ -229,7 +233,59 @@ function SelectUsefulData(time_series_entry){
     })
 
 
-    // 
+    //下面我们处理历史预测数据的显示
+    // 定义序列 
+    const history_cpu_predict = Array.from({ length: total_length }, () => null) // CPU历史预测数组：默认0
+    const history_disk_predict = Array.from({ length: total_length }, () => null) // 磁盘历史预测数组：默认0
+    const history_memory_predict = Array.from({ length: total_length }, () => null) // 内存历史预测数组：默认0
+    
+    // 获取后端传来的历史预测的序列的真实长度
+    const history_pred_length = time_series_entry.data.prediction.history_series.DLinear.CPU.length
+    // 定义历史预测序列开始的index，从time_series_entry找到对应的序列
+    let history_cpu_predict_idx = history_lengh - history_pred_length
+    let history_disk_predict_idx = history_lengh - history_pred_length
+    let history_memory_predict_idx = history_lengh - history_pred_length
+
+
+    // 加载历史预测数据, 下面三个是历史预测数据的序列
+    let history_cpu_list
+    let history_disk_list
+    let history_memory_list
+
+    let history_series = time_series_entry.data.prediction.history_series
+    // 针对不同的算法选择不同的历史预测数据
+    if(currentMethod.value == "DLinear"){
+      console.log("历史预测数据：算法转化为DLinear")
+      history_cpu_list = history_series.DLinear.CPU
+      history_disk_list = history_series.DLinear.DISK
+      history_memory_list = history_series.DLinear.MEM
+    }
+    else if (currentMethod.value == "MEMA"){
+      console.log("历史预测数据：算法转化为MEMA")
+      history_cpu_list = history_series.MEMA.CPU
+      history_disk_list = history_series.MEMA.DISK
+      history_memory_list = history_series.MEMA.MEM
+    }
+    
+    //从 history_cpu_predict_idx一直到 history_lengh ，逐个元素的填充history_cpu_predict 等序列，null会被图标渲染为没有东西
+    
+    // 历史cpu的填充
+    history_cpu_list.forEach(element => {
+      history_cpu_predict[history_cpu_predict_idx] = element[1]
+      history_cpu_predict_idx = history_cpu_predict_idx + 1
+    })
+    // 历史disk的填充
+    history_disk_list.forEach(element => {
+      history_disk_predict[history_disk_predict_idx] = element[1]
+      history_disk_predict_idx = history_disk_predict_idx + 1
+    })
+    // 历史memory的填充
+    history_memory_list.forEach(element => {
+      history_memory_predict[history_memory_predict_idx] = element[1]
+      history_memory_predict_idx = history_memory_predict_idx + 1
+    })
+    // =======================================================================
+
 
     // 求出最大值和最小值
     let tmp_array = [...cpu.filter(v => v !== null && !Number.isNaN(v)),
@@ -237,13 +293,16 @@ function SelectUsefulData(time_series_entry){
                      ...memory.filter(v => v !== null && !Number.isNaN(v)),
                      ...cpuPred.filter(v => v !== null && !Number.isNaN(v)),
                      ...diskPred.filter(v => v !== null && !Number.isNaN(v)),
-                     ...memoryPred.filter(v => v !== null && !Number.isNaN(v))]
+                     ...memoryPred.filter(v => v !== null && !Number.isNaN(v)),
+                     ...history_cpu_predict.filter(v => v !== null && !Number.isNaN(v)),
+                     ...history_disk_predict.filter(v => v !== null && !Number.isNaN(v)),
+                     ...history_memory_predict.filter(v => v !== null && !Number.isNaN(v))]
     
     y_range[0]=Math.min(...tmp_array)
     y_range[1]=Math.max(...tmp_array)
 
 
-    return { times, cpu, memory, disk, cpuPred, memoryPred, diskPred, y_range };
+    return { times, cpu, memory, disk, cpuPred, memoryPred, diskPred, history_cpu_predict, history_disk_predict, history_memory_predict, y_range };
 }
 
 // chartOption 作为响应式对象
@@ -275,6 +334,11 @@ const updateChart = async () => {
     const time_series = await time_data_store.get_bussiness_prediction(selectedGranularity.value, currentBusiness.value)
     console.log("selectedData ", time_series)
     time_data_store.selectedData.value = SelectUsefulData(time_series);
+    console.log("niuniuniu")
+    console.log("time_data_store.selectedData.value.history_cpu_predict", time_data_store.selectedData.value.history_cpu_predict)
+    console.log("time_data_store.selectedData.value.history_disk_predict", time_data_store.selectedData.value.history_disk_predict)
+    console.log("time_data_store.selectedData.value.history_memory_predict", time_data_store.selectedData.value.history_memory_predict)
+    console.log("niuniuniu end")
   }
   catch(e){
     console.error("更新主表格的时候出错",e)
@@ -287,7 +351,10 @@ const updateChart = async () => {
       '#FF9900',
       '#A1D8D9',
       '#7FBFFF',
-      '#FFD666'
+      '#FFD666',
+      '#66ff91',
+      '#ff6666',
+      '#928f89'
     ],
     backgroundColor: '#fff',
     tooltip: {
@@ -308,7 +375,10 @@ const updateChart = async () => {
         '磁盘利用率(%)',
         'CPU利用率预测(%)',
         '内存利用率预测(%)',
-        '磁盘利用率预测(%)'
+        '磁盘利用率预测(%)',
+        'CPU利用率历史预测(%)',
+        '磁盘利用率历史预测(%)',
+        '内存利用率历史预测(%)'
       ],
       selectedMode: 'multiple',
       itemWidth: 12,
@@ -439,6 +509,30 @@ const updateChart = async () => {
         type: 'line',
         smooth: false,
         data: time_data_store.selectedData.value.diskPred,
+        symbolSize: 4,
+        lineStyle: { type: 'dashed' }
+      },
+      {
+        name: 'CPU利用率历史预测(%)',
+        type: 'line',
+        smooth: false,
+        data: time_data_store.selectedData.value.history_cpu_predict,
+        symbolSize: 4,
+        lineStyle: { type: 'dashed' }
+      },
+      {
+        name: '磁盘利用率历史预测(%)',
+        type: 'line',
+        smooth: false,
+        data: time_data_store.selectedData.value.history_disk_predict,
+        symbolSize: 4,
+        lineStyle: { type: 'dashed' }
+      },
+      {
+        name: '内存利用率历史预测(%)',
+        type: 'line',
+        smooth: false,
+        data: time_data_store.selectedData.value.history_memory_predict,
         symbolSize: 4,
         lineStyle: { type: 'dashed' }
       }

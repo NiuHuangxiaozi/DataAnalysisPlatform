@@ -10,7 +10,7 @@
   -->
   <div class="page-container">
     <!-- 主标题 -->
-    <h1>云资源预测平台概览</h1>
+    <h1>虚拟机预测平台概览</h1>
 
     <!-- 业务选择与操作区 -->
     <Row class="operation-row" align="middle" justify="start" gutter=16>
@@ -165,8 +165,8 @@ function SelectUsefulData(time_series_entry){
 
     console.log(time_series_entry)
     // 统计序列长度
-    let history_lengh = time_series_entry.data.prediction.series.length
-    let prediction_length = time_series_entry.data.prediction.predict_series.length
+    let history_lengh = time_series_entry.data.prediction.series.CPU.series.length
+    let prediction_length = time_series_entry.data.prediction.predict_series.DLinear.CPU.length
     let total_length = history_lengh + prediction_length
 
     // 定义数据结构
@@ -253,6 +253,53 @@ function SelectUsefulData(time_series_entry){
       mem_idx = mem_idx + 1
     })
 
+    // 处理历史预测数据 ====
+
+    // 1.定义存储数据的序列
+    const history_cpu_pred = Array.from({ length: total_length }, () => null) // CPU预测数组：默认0
+    const history_memory_pred = Array.from({ length: total_length }, () => null) // 内存预测数组：默认0
+    const history_disk_pred = Array.from({ length: total_length }, () => null) // 磁盘预测数组：默认0
+
+    // 2.获取后端对应的数据序列
+    let history_cpu_pred_list;
+    let history_memory_pred_list;
+    let history_disk_pred_list;
+
+    // 3.按照不同的算法进行不同的加载
+    if(currentMethod.value == "DLinear"){
+      console.log("算法转化为DLinear")
+      history_cpu_pred_list = time_series_entry.data.prediction.history_series.DLinear.CPU
+      history_memory_pred_list = time_series_entry.data.prediction.history_series.DLinear.MEM
+      history_disk_pred_list = time_series_entry.data.prediction.history_series.DLinear.DISK
+    }
+    else if (currentMethod.value == "MEMA"){
+      console.log("算法转化为MEMA")
+      history_cpu_pred_list = time_series_entry.data.prediction.history_series.MEMA.CPU
+      history_memory_pred_list = time_series_entry.data.prediction.history_series.MEMA.MEM
+      history_disk_pred_list = time_series_entry.data.prediction.history_series.MEMA.DISK
+    }
+    // 4.找到对应起始的index
+    let history_cpu_pred_idx = history_lengh - history_cpu_pred_list.length
+    let history_memory_pred_idx = history_lengh - history_memory_pred_list.length
+    let history_disk_pred_idx = history_lengh - history_disk_pred_list.length
+
+    // 5.加载历史预测数据
+    history_cpu_pred_list.forEach(element => {
+      history_cpu_pred[history_cpu_pred_idx] = element[1]
+      history_cpu_pred_idx = history_cpu_pred_idx + 1
+    })
+    history_memory_pred_list.forEach(element => {
+      history_memory_pred[history_memory_pred_idx] = element[1]
+      history_memory_pred_idx = history_memory_pred_idx + 1
+    })
+    history_disk_pred_list.forEach(element => {
+      history_disk_pred[history_disk_pred_idx] = element[1]
+      history_disk_pred_idx = history_disk_pred_idx + 1
+    })
+    // 处理历史预测数据结束 ====
+    console.log("history_cpu_pred is ", history_cpu_pred)
+    console.log("history_memory_pred is ", history_memory_pred)
+    console.log("history_disk_pred is ", history_disk_pred)
 
     // 求出最大值和最小值, 方便y轴渲染
     let tmp_array = [...cpu.filter(v => v !== null && !Number.isNaN(v)),
@@ -260,13 +307,16 @@ function SelectUsefulData(time_series_entry){
                      ...memory.filter(v => v !== null && !Number.isNaN(v)),
                      ...cpuPred.filter(v => v !== null && !Number.isNaN(v)),
                      ...diskPred.filter(v => v !== null && !Number.isNaN(v)),
-                     ...memoryPred.filter(v => v !== null && !Number.isNaN(v))]
+                     ...memoryPred.filter(v => v !== null && !Number.isNaN(v)),
+                     ...history_cpu_pred.filter(v => v !== null && !Number.isNaN(v)),
+                     ...history_memory_pred.filter(v => v !== null && !Number.isNaN(v)),
+                     ...history_disk_pred.filter(v => v !== null && !Number.isNaN(v))]
     
     y_range[0]=Math.min(...tmp_array)
     y_range[1]=Math.max(...tmp_array)
 
 
-    return { times, cpu, memory, disk, cpuPred, memoryPred, diskPred, y_range };
+    return { times, cpu, memory, disk, cpuPred, memoryPred, diskPred, history_cpu_pred, history_memory_pred, history_disk_pred, y_range };
 }
 
 // chartOption 作为响应式对象
@@ -302,6 +352,7 @@ const updateChart = async () => {
                                                                  currentBusiness.value,
                                                                 currentVM.value)
     time_data_store.selectedData.value = SelectUsefulData(time_series);
+    console.log("time_data_store.selectedData.value is ", time_data_store.selectedData.value)
   }
   catch(e){
     console.error("更新主表格的时候出错",e)
@@ -314,7 +365,10 @@ const updateChart = async () => {
       '#FF9900',
       '#A1D8D9',
       '#7FBFFF',
-      '#FFD666'
+      '#FFD666',
+      '#2d8cf0',
+      '#ed4014',
+      '#66ff23'
     ],
     backgroundColor: '#fff',
     tooltip: {
@@ -335,7 +389,10 @@ const updateChart = async () => {
         '磁盘利用率(%)',
         'CPU利用率预测(%)',
         '内存利用率预测(%)',
-        '磁盘利用率预测(%)'
+        '磁盘利用率预测(%)',
+        'CPU利用率历史预测(%)',
+        '内存利用率历史预测(%)',
+        '磁盘利用率历史预测(%)'
       ],
       selectedMode: 'multiple',
       itemWidth: 12,
@@ -468,6 +525,30 @@ const updateChart = async () => {
         data: time_data_store.selectedData.value.diskPred,
         symbolSize: 4,
         lineStyle: { type: 'dashed' }
+      },
+      {
+        name: 'CPU利用率历史预测(%)',
+        type: 'line',
+        smooth: false,
+        data: time_data_store.selectedData.value.history_cpu_pred,
+        symbolSize: 4,
+        lineStyle: { type: 'solid' }
+      },
+      {
+        name: '内存利用率历史预测(%)',
+        type: 'line',
+        smooth: false,
+        data: time_data_store.selectedData.value.history_memory_pred,
+        symbolSize: 4,
+        lineStyle: { type: 'solid' }
+      },
+      {
+        name: '磁盘利用率历史预测(%)',
+        type: 'line',
+        smooth: false,
+        data: time_data_store.selectedData.value.history_disk_pred,
+        symbolSize: 4,
+        lineStyle: { type: 'solid' }
       }
     ]
   };

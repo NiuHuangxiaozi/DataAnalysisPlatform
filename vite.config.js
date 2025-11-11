@@ -12,7 +12,16 @@ export default defineConfig({
   )],
   server: {
     port: 4000,
-    open: false,
+    host: '0.0.0.0',
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'https://frp-rib.com:49157/',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: false,
+      }
+    },
   }
 })
 
