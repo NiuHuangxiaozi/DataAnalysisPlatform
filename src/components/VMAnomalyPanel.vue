@@ -30,7 +30,7 @@
 
     <!-- 信息提示 -->
     <Alert type="info" show-icon style="margin-bottom: 20px;" v-if="selectedBusiness">
-      当前展示<strong>{{ selectedBusiness }}</strong>业务下各主机基础设施资源的异常检测结果, 利用率超过80%会被检测为异常
+      当前展示<strong>{{ selectedBusiness }}</strong>业务下各主机基础设施资源的异常检测结果, 利用率超过30%会被检测为异常
     </Alert>
 
     <!-- 加载状态 -->
@@ -119,8 +119,8 @@ const selectUsefulData = (time_series_entry) => {
   }
 
   // 统计序列长度
-  let history_length = time_series_entry.data.prediction.series.length;
-  let prediction_length = time_series_entry.data.prediction.predict_series.length;
+  let history_length = time_series_entry.data.prediction.series.CPU.series.length;
+  let prediction_length = time_series_entry.data.prediction.predict_series.DLinear.CPU.length;
   let total_length = history_length + prediction_length;
 
   // 定义数据结构
@@ -150,7 +150,7 @@ const selectUsefulData = (time_series_entry) => {
   // 内存历史数据（假设数据结构相似）
   history_lists.MEM.series.forEach(element => {
     if (memory_idx < history_length) {
-      memory[memory_idx] = element[2] || element[1]; // 内存值
+      memory[memory_idx]  = element[1]; // 内存值
       memory_idx++;
     }
   });
@@ -158,7 +158,7 @@ const selectUsefulData = (time_series_entry) => {
   // 磁盘历史数据（假设数据结构相似）
   history_lists.DISK.series.forEach(element => {
     if (disk_idx < history_length) {
-      disk[disk_idx] = element[3] || element[1]; // 磁盘值
+      disk[disk_idx] = element[1]; // 磁盘值
       disk_idx++;
     }
   });
@@ -174,14 +174,14 @@ const selectUsefulData = (time_series_entry) => {
 
   predict_lists.DLinear.MEM.forEach(element => {
     if (memory_idx < total_length) {
-      memoryPred[memory_idx] = element[2] || element[1];
+      memoryPred[memory_idx] = element[1];
       memory_idx++;
     }
   });
 
   predict_lists.DLinear.DISK.forEach(element => {
     if (disk_idx < total_length) {
-      diskPred[disk_idx] = element[3] || element[1];
+      diskPred[disk_idx] = element[1];
       disk_idx++;
     }
   });
@@ -236,19 +236,22 @@ const checkVMAnomalies = async (businessName, vmIP) => {
     const diskMax = diskValues.length > 0 ? Math.max(...diskValues) : 0;
 
     // 异常检测逻辑（参考VM.vue中的检测标准）
-    if (cpuMax > 80) {
+    console.log("memoryMax is ", memoryMax);
+    console.log("cpuMax is ", cpuMax);
+    console.log("diskMax is ", diskMax);
+    if (cpuMax > 40) {
       status.cpu.type = 'error';
-      status.cpu.message = `异常检测结果：当前CPU资源存在异常(${cpuMax.toFixed(1)}% > 80%)，请注意！`;
+      status.cpu.message = `异常检测结果：当前CPU资源存在异常(${cpuMax.toFixed(1)}% > 40%)，请注意！`;
     }
 
-    if (memoryMax > 80) {
+    if (memoryMax > 40) {
       status.memory.type = 'error';
-      status.memory.message = `异常检测结果：当前内存资源存在异常(${memoryMax.toFixed(1)}% > 80%)，请注意！`;
+      status.memory.message = `异常检测结果：当前内存资源存在异常(${memoryMax.toFixed(1)}% > 40%)，请注意！`;
     }
 
-    if (diskMax > 80) {
+    if (diskMax > 40) {
       status.disk.type = 'error';
-      status.disk.message = `异常检测结果：当前磁盘资源存在异常(${diskMax.toFixed(1)}% > 80%)，请注意！`;
+      status.disk.message = `异常检测结果：当前磁盘资源存在异常(${diskMax.toFixed(1)}% > 40%)，请注意！`;
     }
 
   } catch (error) {
@@ -284,22 +287,44 @@ const loadVMList = async (businessName) => {
   }
 
   loading.value = true;
-  
+
   try {
     const res = await timeDataStore_.get_vm_list(businessName);
     console.log("vm list is ", res.data);
     const vmIPs = res.data?.available_machine_ips?.H || ['192.168.1.10', '192.168.1.11', '192.168.1.12'];
     console.log("vm ips is ", vmIPs);
-    
+
     // 并行获取所有主机的异常检测状态
     const vmPromises = vmIPs.map(async (ip) => {
       const status = await checkVMAnomalies(businessName, ip);
       return { ip, status };
     });
-    
-    vmList.value = await Promise.all(vmPromises);
+
+    const vmData = await Promise.all(vmPromises);
+
+    // 对主机列表进行排序：异常的负载显示在前面，正常的列在后面
+    // 检查主机是否有任何异常（CPU、内存、磁盘任一指标异常）
+    const hasAnomaly = (vm) => {
+      return vm.status.cpu.type === 'error' ||
+             vm.status.memory.type === 'error' ||
+             vm.status.disk.type === 'error';
+    };
+
+    // 按异常状态排序：异常的在前，正常的在后
+    vmList.value = vmData.sort((a, b) => {
+      const aHasAnomaly = hasAnomaly(a);
+      const bHasAnomaly = hasAnomaly(b);
+
+      // 如果 a 有异常而 b 无异常，a 排在前面
+      if (aHasAnomaly && !bHasAnomaly) return -1;
+      // 如果 b 有异常而 a 无异常，b 排在前面
+      if (!aHasAnomaly && bHasAnomaly) return 1;
+      // 如果两者状态相同，保持原有顺序
+      return 0;
+    });
+
     console.log("加载的主机异常状态:", vmList.value);
-    
+
   } catch (error) {
     console.error('获取主机列表失败:', error);
     // 使用模拟数据作为后备
@@ -308,7 +333,24 @@ const loadVMList = async (businessName) => {
       const status = await checkVMAnomalies(businessName, ip);
       return { ip, status };
     });
-    vmList.value = await Promise.all(vmPromises);
+
+    const vmData = await Promise.all(vmPromises);
+
+    // 对默认主机列表也进行相同的排序
+    const hasAnomaly = (vm) => {
+      return vm.status.cpu.type === 'error' ||
+             vm.status.memory.type === 'error' ||
+             vm.status.disk.type === 'error';
+    };
+
+    vmList.value = vmData.sort((a, b) => {
+      const aHasAnomaly = hasAnomaly(a);
+      const bHasAnomaly = hasAnomaly(b);
+
+      if (aHasAnomaly && !bHasAnomaly) return -1;
+      if (!aHasAnomaly && bHasAnomaly) return 1;
+      return 0;
+    });
   } finally {
     loading.value = false;
   }

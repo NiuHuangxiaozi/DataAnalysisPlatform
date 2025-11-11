@@ -89,9 +89,9 @@ const checkBusinessAnomalies = async (businessName) => {
           const cpuValues = dlinearData.CPU.map(item => item[1]).filter(v => v !== null && !isNaN(v));
           if (cpuValues.length > 0) {
             const cpuMax = Math.max(...cpuValues);
-            if (cpuMax > 80) {
+            if (cpuMax > 30) {
               status.cpu.type = 'error';
-              status.cpu.message = `异常检测结果：当前CPU资源存在异常(${cpuMax.toFixed(1)}% > 80%)，请注意！`;
+              status.cpu.message = `异常检测结果：当前CPU资源存在异常(${cpuMax.toFixed(1)}% > 30%)，请注意！`;
             } else {
               status.cpu.message = `异常检测结果：当前CPU资源无异常(${cpuMax.toFixed(1)}%)`;
             }
@@ -103,9 +103,9 @@ const checkBusinessAnomalies = async (businessName) => {
           const memValues = dlinearData.MEM.map(item => item[1]).filter(v => v !== null && !isNaN(v));
           if (memValues.length > 0) {
             const memoryMax = Math.max(...memValues);
-            if (memoryMax > 80) {
+            if (memoryMax > 30) {
               status.memory.type = 'error';
-              status.memory.message = `异常检测结果：当前内存资源存在异常(${memoryMax.toFixed(1)}% > 80%)，请注意！`;
+              status.memory.message = `异常检测结果：当前内存资源存在异常(${memoryMax.toFixed(1)}% > 30%)，请注意！`;
             } else {
               status.memory.message = `异常检测结果：当前内存资源无异常(${memoryMax.toFixed(1)}%)`;
             }
@@ -117,9 +117,9 @@ const checkBusinessAnomalies = async (businessName) => {
           const diskValues = dlinearData.DISK.map(item => item[1]).filter(v => v !== null && !isNaN(v));
           if (diskValues.length > 0) {
             const diskMax = Math.max(...diskValues);
-            if (diskMax > 80) {
+            if (diskMax > 30) {
               status.disk.type = 'error';
-              status.disk.message = `异常检测结果：当前磁盘资源存在异常(${diskMax.toFixed(1)}% > 80%)，请注意！`;
+              status.disk.message = `异常检测结果：当前磁盘资源存在异常(${diskMax.toFixed(1)}% > 30%)，请注意！`;
             } else {
               status.disk.message = `异常检测结果：当前磁盘资源无异常(${diskMax.toFixed(1)}%)`;
             }
@@ -142,14 +142,36 @@ const loadBusinessData = async () => {
   try {
     const res = await timeDataStore_.get_business_list();
     const businesses = res.data?.available_business || ['营销管理系统', '客户管理系统', '订单管理系统'];
-    
+
     // 为每个业务异步获取异常检测状态
     const businessPromises = businesses.map(async (name) => ({
       name,
       status: await checkBusinessAnomalies(name)
     }));
-    
-    businessList.value = await Promise.all(businessPromises);
+
+    const businessData = await Promise.all(businessPromises);
+
+    // 对业务列表进行排序：异常的负载显示在前面，正常的列在后面
+    // 检查业务是否有任何异常（CPU、内存、磁盘任一指标异常）
+    const hasAnomaly = (business) => {
+      return business.status.cpu.type === 'error' ||
+             business.status.memory.type === 'error' ||
+             business.status.disk.type === 'error';
+    };
+
+    // 按异常状态排序：异常的在前，正常的在后
+    businessList.value = businessData.sort((a, b) => {
+      const aHasAnomaly = hasAnomaly(a);
+      const bHasAnomaly = hasAnomaly(b);
+
+      // 如果 a 有异常而 b 无异常，a 排在前面
+      if (aHasAnomaly && !bHasAnomaly) return -1;
+      // 如果 b 有异常而 a 无异常，b 排在前面
+      if (!aHasAnomaly && bHasAnomaly) return 1;
+      // 如果两者状态相同，保持原有顺序
+      return 0;
+    });
+
   } catch (error) {
     console.error('获取业务列表失败:', error);
     // 使用默认业务列表并异步获取状态
@@ -158,8 +180,24 @@ const loadBusinessData = async () => {
       name,
       status: await checkBusinessAnomalies(name)
     }));
-    
-    businessList.value = await Promise.all(businessPromises);
+
+    const businessData = await Promise.all(businessPromises);
+
+    // 对默认业务列表也进行相同的排序
+    const hasAnomaly = (business) => {
+      return business.status.cpu.type === 'error' ||
+             business.status.memory.type === 'error' ||
+             business.status.disk.type === 'error';
+    };
+
+    businessList.value = businessData.sort((a, b) => {
+      const aHasAnomaly = hasAnomaly(a);
+      const bHasAnomaly = hasAnomaly(b);
+
+      if (aHasAnomaly && !bHasAnomaly) return -1;
+      if (!aHasAnomaly && bHasAnomaly) return 1;
+      return 0;
+    });
   }
 };
 

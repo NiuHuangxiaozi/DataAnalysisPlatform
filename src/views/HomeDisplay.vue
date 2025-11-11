@@ -137,9 +137,9 @@ const Timestamps2TimeLabel = (time_stamp)=>{
 // 从后端的一堆东西中提取数据
 function SelectUsefulData(time_series_entry){
 
-    console.log("SelectUsefulData========================")
-    console.log(time_series_entry)
-    console.log("SelectUsefulData =================================================")
+    // console.log("SelectUsefulData========================")
+    // console.log(time_series_entry)
+    // console.log("SelectUsefulData =================================================")
 
     // 统计序列长度
     const  history_lengh = time_series_entry.data.prediction.series.CPU.length
@@ -334,11 +334,11 @@ const updateChart = async () => {
     const time_series = await time_data_store.get_bussiness_prediction(selectedGranularity.value, currentBusiness.value)
     console.log("selectedData ", time_series)
     time_data_store.selectedData.value = SelectUsefulData(time_series);
-    console.log("niuniuniu")
-    console.log("time_data_store.selectedData.value.history_cpu_predict", time_data_store.selectedData.value.history_cpu_predict)
-    console.log("time_data_store.selectedData.value.history_disk_predict", time_data_store.selectedData.value.history_disk_predict)
-    console.log("time_data_store.selectedData.value.history_memory_predict", time_data_store.selectedData.value.history_memory_predict)
-    console.log("niuniuniu end")
+    // console.log("niuniuniu")
+    // console.log("time_data_store.selectedData.value.history_cpu_predict", time_data_store.selectedData.value.history_cpu_predict)
+    // console.log("time_data_store.selectedData.value.history_disk_predict", time_data_store.selectedData.value.history_disk_predict)
+    // console.log("time_data_store.selectedData.value.history_memory_predict", time_data_store.selectedData.value.history_memory_predict)
+    // console.log("niuniuniu end")
   }
   catch(e){
     console.error("更新主表格的时候出错",e)
