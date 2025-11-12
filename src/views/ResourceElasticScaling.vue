@@ -251,25 +251,25 @@ async function showAdvice() {
     const diskMaxValue = Math.max([...data.value.diskPred.filter(v => v!==null && !Number.isNaN(v))])
 
 
-    if(cpuMaxValue.value > 80){
-      cpuText.value = "目前CPU的整体运行有风险，预计最大的负载会超过80%,请做好预警，及时增加资源！！！！"
+    if(cpuMaxValue.value > 30){
+      cpuText.value = "目前CPU的整体运行有风险，预计最大的负载会超过30%,请做好预警，及时增加资源！！！！"
     }
     else{
-      cpuText.value = "目前CPU的整体运行平稳，预计最大的负载不会超过80%,系统正常。"
+      cpuText.value = "目前CPU的整体运行平稳，预计最大的负载不会超过30%,系统正常。"
     }
 
-    if(memMaxValue.value > 80){
-      memText.value = "目前内存的整体运行有风险，预计最大的负载会超过80%,请做好预警，及时增加资源！！！！"
+    if(memMaxValue.value > 30){
+      memText.value = "目前内存的整体运行有风险，预计最大的负载会超过30%,请做好预警，及时增加资源！！！！"
     }
     else{
-      memText.value = "目前内存的整体运行平稳，预计最大的负载不会超过80%,系统正常。"
+      memText.value = "目前内存的整体运行平稳，预计最大的负载不会超过30%,系统正常。"
     }
 
-    if(diskMaxValue.value > 80){
-      diskText.value = "目前磁盘的整体运行有风险，预计最大的负载会超过80%,请做好预警，及时增加资源！！！！"
+    if(diskMaxValue.value > 30){
+      diskText.value = "目前磁盘的整体运行有风险，预计最大的负载会超过30%,请做好预警，及时增加资源！！！！"
     }
     else{
-      diskText.value = "目前磁盘的整体运行平稳，预计最大的负载不会超过80%,系统正常。"
+      diskText.value = "目前磁盘的整体运行平稳，预计最大的负载不会超过30%,系统正常。"
     }
 
     console.log("建议处理完毕", cpuText,memText,diskText)

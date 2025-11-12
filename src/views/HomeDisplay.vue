@@ -285,6 +285,8 @@ function SelectUsefulData(time_series_entry){
       history_memory_predict_idx = history_memory_predict_idx + 1
     })
     // =======================================================================
+    
+
 
 
     // 求出最大值和最小值
@@ -302,9 +304,61 @@ function SelectUsefulData(time_series_entry){
     y_range[1]=Math.max(...tmp_array)
 
 
-    return { times, cpu, memory, disk, cpuPred, memoryPred, diskPred, history_cpu_predict, history_disk_predict, history_memory_predict, y_range };
+
+    //上面的代码都是为了求最大值和最小值， 直接返回【time stamp, value]
+
+    // 历史数据
+    const original_cpu_history_data = time_series_entry.data.prediction.series.CPU.map(TimestampsTrans)
+    const original_disk_history_data = time_series_entry.data.prediction.series.DISK.map(TimestampsTrans)
+    const original_memory_history_data = time_series_entry.data.prediction.series.MEM.map(TimestampsTrans)
+
+    let original_cpu_predict_data = null
+    let original_disk_predict_data = null
+    let original_memory_predict_data = null
+    let original_cpu_history_predict_data = null
+    let original_disk_history_predict_data = null
+    let original_memory_history_predict_data = null
+    // 预测数据
+    if (currentMethod.value == "DLinear"){
+      original_cpu_predict_data = time_series_entry.data.prediction.predict_series.DLinear.CPU.map(TimestampsTrans)
+      original_disk_predict_data = time_series_entry.data.prediction.predict_series.DLinear.DISK.map(TimestampsTrans)
+      original_memory_predict_data = time_series_entry.data.prediction.predict_series.DLinear.MEM.map(TimestampsTrans)
+
+      original_cpu_history_predict_data = time_series_entry.data.prediction.history_series.DLinear.CPU.map(TimestampsTrans)
+      original_disk_history_predict_data = time_series_entry.data.prediction.history_series.DLinear.DISK.map(TimestampsTrans)
+      original_memory_history_predict_data = time_series_entry.data.prediction.history_series.DLinear.MEM.map(TimestampsTrans)
+    }
+    else if (currentMethod.value == "MEMA"){
+      original_cpu_predict_data = time_series_entry.data.prediction.predict_series.MEMA.CPU.map(TimestampsTrans)
+      original_disk_predict_data = time_series_entry.data.prediction.predict_series.MEMA.DISK.map(TimestampsTrans)
+      original_memory_predict_data = time_series_entry.data.prediction.predict_series.MEMA.MEM.map(TimestampsTrans)
+
+      original_cpu_history_predict_data = time_series_entry.data.prediction.history_series.MEMA.CPU.map(TimestampsTrans)
+      original_disk_history_predict_data = time_series_entry.data.prediction.history_series.MEMA.DISK.map(TimestampsTrans)
+      original_memory_history_predict_data = time_series_entry.data.prediction.history_series.MEMA.MEM.map(TimestampsTrans)
+    }
+    // 
+
+
+
+    return { times, cpu, memory, disk, cpuPred, memoryPred, diskPred, history_cpu_predict, history_disk_predict, history_memory_predict, y_range ,
+            timestamp_data:{
+              cpu: original_cpu_history_data,
+              disk: original_disk_history_data,
+              memory: original_memory_history_data,
+              cpu_predict: original_cpu_predict_data,
+              disk_predict: original_disk_predict_data,
+              memory_predict: original_memory_predict_data,
+              cpu_history_predict: original_cpu_history_predict_data,
+              disk_history_predict: original_disk_history_predict_data,
+              memory_history_predict: original_memory_history_predict_data,
+            }
+    };
 }
 
+const TimestampsTrans = (val)=>{
+  return [val[0]*1000, val[1]]
+}
 // chartOption 作为响应式对象
 const chartOption = ref({});
 
@@ -332,7 +386,6 @@ const updateChart = async () => {
   console.log("currentBusiness.value", currentBusiness.value)
   try{
     const time_series = await time_data_store.get_bussiness_prediction(selectedGranularity.value, currentBusiness.value)
-    console.log("selectedData ", time_series)
     time_data_store.selectedData.value = SelectUsefulData(time_series);
     // console.log("niuniuniu")
     // console.log("time_data_store.selectedData.value.history_cpu_predict", time_data_store.selectedData.value.history_cpu_predict)
@@ -396,26 +449,24 @@ const updateChart = async () => {
       containLabel: true
     },
     xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: time_data_store.selectedData.value.times,
-      axisLine: {
-        lineStyle: {
-          color: '#666',
-          width: 1.5
-        }
-      },
-      axisTick: {
-        alignWithLabel: true,
-        length: 6,
-        lineStyle: {
-          color: '#666'
-        }
-      },
+      type: 'time',
       axisLabel: {
-        color: '#333',
-        fontSize: 12,
-        interval: 'auto'
+          // fontSize: 10,
+          // // 自动隐藏过密的标签
+          // hideOverlap: true,
+          // // 控制标签的间隔（0 表示全显示，'auto' 表示自动优化）
+          // interval: 'auto',
+          // // 旋转标签（如需要）
+          // rotate: 30,
+            formatter: value => {
+              const date = new Date(value);
+              const yyyy = date.getFullYear();
+              const MM   = String(date.getMonth()+1).padStart(2,'0');
+              const dd   = String(date.getDate()).padStart(2,'0');
+              const hh   = String(date.getHours()).padStart(2,'0');
+              // 自定义格式，比如 “YYYY-MM-DD HH:mm”
+              return `${yyyy}-${MM}-${dd} ${hh}`;
+            }
       },
       splitLine: {
         show: true,
@@ -471,28 +522,28 @@ const updateChart = async () => {
         name: 'CPU利用率(%)',
         type: 'line',
         smooth: false,
-        data: time_data_store.selectedData.value.cpu,
+        data: time_data_store.selectedData.value.timestamp_data.cpu,
         symbolSize: 4
       },
       {
         name: '内存利用率(%)',
         type: 'line',
         smooth: false,
-        data: time_data_store.selectedData.value.memory,
+        data: time_data_store.selectedData.value.timestamp_data.memory,
         symbolSize: 4
       },
       {
         name: '磁盘利用率(%)',
         type: 'line',
         smooth: false,
-        data: time_data_store.selectedData.value.disk,
+        data: time_data_store.selectedData.value.timestamp_data.disk,
         symbolSize: 4
       },
       {
         name: 'CPU利用率预测(%)',
         type: 'line',
         smooth: false,
-        data: time_data_store.selectedData.value.cpuPred,
+        data: time_data_store.selectedData.value.timestamp_data.cpu_predict,
         symbolSize: 4,
         lineStyle: { type: 'dashed' }
       },
@@ -500,7 +551,7 @@ const updateChart = async () => {
         name: '内存利用率预测(%)',
         type: 'line',
         smooth: false,
-        data: time_data_store.selectedData.value.memoryPred,
+        data: time_data_store.selectedData.value.timestamp_data.memory_predict,
         symbolSize: 4,
         lineStyle: { type: 'dashed' }
       },
@@ -508,7 +559,7 @@ const updateChart = async () => {
         name: '磁盘利用率预测(%)',
         type: 'line',
         smooth: false,
-        data: time_data_store.selectedData.value.diskPred,
+        data: time_data_store.selectedData.value.timestamp_data.disk_predict,
         symbolSize: 4,
         lineStyle: { type: 'dashed' }
       },
@@ -516,7 +567,7 @@ const updateChart = async () => {
         name: 'CPU利用率历史预测(%)',
         type: 'line',
         smooth: false,
-        data: time_data_store.selectedData.value.history_cpu_predict,
+        data: time_data_store.selectedData.value.timestamp_data.cpu_history_predict,
         symbolSize: 4,
         lineStyle: { type: 'dashed' }
       },
@@ -524,7 +575,7 @@ const updateChart = async () => {
         name: '磁盘利用率历史预测(%)',
         type: 'line',
         smooth: false,
-        data: time_data_store.selectedData.value.history_disk_predict,
+        data: time_data_store.selectedData.value.timestamp_data.disk_history_predict,
         symbolSize: 4,
         lineStyle: { type: 'dashed' }
       },
@@ -532,7 +583,7 @@ const updateChart = async () => {
         name: '内存利用率历史预测(%)',
         type: 'line',
         smooth: false,
-        data: time_data_store.selectedData.value.history_memory_predict,
+        data: time_data_store.selectedData.value.timestamp_data.memory_history_predict,
         symbolSize: 4,
         lineStyle: { type: 'dashed' }
       }

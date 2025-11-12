@@ -11,6 +11,8 @@ import VM from '../views/VM.vue'
 import COR from  '../views/Cor.vue'
 import Anomaly from '../views/Anomaly.vue'
 
+import TestCase from '../views/test.vue'
+
 // just for testcase
 // import TestCase from '../views/Test.vue'
 import { compile } from 'vue'
@@ -19,6 +21,12 @@ const routes = [
   {
     path: '/',
     redirect: '/login'
+  },
+  {
+    path: '/testcase',
+    name: 'TestCase',
+    component: TestCase,
+    meta: { requiresAuth: false }
   },
   {
     path: '/login',

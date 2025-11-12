@@ -256,6 +256,10 @@ const Timestamps2TimeLabel = (time_stamp)=>{
   return label
 }
 
+const TimestampsTrans = (val)=>{
+  return [val[0]*1000, val[1]]
+}
+
 // 从后端的一堆东西中提取数据
 function SelectUsefulData(time_series_entry){
 
@@ -493,6 +497,91 @@ function SelectUsefulData(time_series_entry){
     let average_response_time_pred_min = Math.min(...average_response_time_Pred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
     let request_failed_rate_pred_min = Math.min(...request_failed_rate_Pred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
     let request_total_count_pred_min = Math.min(...request_total_count_Pred.filter(v => v !== null && !Number.isNaN(v)).slice(1))
+
+
+
+
+    // 下面处理4个方面的数据，直接按照【时间戳，值】的形式返回
+    
+    // 1. 获取历史数据
+    const original_history_data = time_series_entry.data.prediction.series
+
+    let original_request_total_count_history_data = original_history_data.request_total_count.series
+    let original_average_response_time_history_data = original_history_data.average_response_time.series
+    let original_request_failed_rate_history_data = original_history_data.request_failed_rate.series
+    let original_apdex_history_data = original_history_data.apdex.series
+
+    // 2 获取预测的数据，同时在第一个位置添加历史数据的最后一个值，保证联通；同时处理历史预测数据，记得分算法类别
+
+    // 预测数据
+    let original_request_total_count_predict_data
+    let original_average_response_time_predict_data
+    let original_request_failed_rate_predict_data
+    let original_apdex_predict_data
+
+    // 历史预测数据
+    let original_request_total_count_history_predict_data
+    let original_average_response_time_history_predict_data
+    let original_request_failed_rate_history_predict_data
+    let original_apdex_history_predict_data
+
+    // 按照算法类别分别赋值
+    const predict_data = time_series_entry.data.prediction.predict_series
+    const history_predict_data = time_series_entry.data.prediction.history_series
+    if(selectedAlgorithm.value == "DLinear"){
+
+      // 修改预测数据
+      original_request_total_count_predict_data = predict_data.DLinear.request_total_count
+      original_average_response_time_predict_data = predict_data.DLinear.average_response_time
+      original_request_failed_rate_predict_data = predict_data.DLinear.request_failed_rate
+      original_apdex_predict_data = predict_data.DLinear.apdex
+
+      // 修改历史预测数据
+      original_request_total_count_history_predict_data = history_predict_data.DLinear.request_total_count
+      original_average_response_time_history_predict_data = history_predict_data.DLinear.average_response_time
+      original_request_failed_rate_history_predict_data = history_predict_data.DLinear.request_failed_rate
+      original_apdex_history_predict_data = history_predict_data.DLinear.apdex
+
+    }
+    else if(selectedAlgorithm.value == "MEMA"){
+      original_request_total_count_predict_data = predict_data.MEMA.request_total_count
+      original_average_response_time_predict_data = predict_data.MEMA.average_response_time
+      original_request_failed_rate_predict_data = predict_data.MEMA.request_failed_rate
+      original_apdex_predict_data = predict_data.MEMA.apdex
+
+      original_request_total_count_history_predict_data = history_predict_data.MEMA.request_total_count
+      original_average_response_time_history_predict_data = history_predict_data.MEMA.average_response_time
+      original_request_failed_rate_history_predict_data = history_predict_data.MEMA.request_failed_rate
+      original_apdex_history_predict_data = history_predict_data.MEMA.apdex
+    }
+
+    // 3. 添加历史数据的最后一个值，保证联通
+    original_request_total_count_predict_data.unshift(original_history_data.request_total_count.series[original_history_data.request_total_count.series.length - 1])
+    original_average_response_time_predict_data.unshift(original_history_data.average_response_time.series[original_history_data.average_response_time.series.length - 1])
+    original_request_failed_rate_predict_data.unshift(original_history_data.request_failed_rate.series[original_history_data.request_failed_rate.series.length - 1])
+    original_apdex_predict_data.unshift(original_history_data.apdex.series[original_history_data.apdex.series.length - 1])
+
+
+    // 将所有序列地时间戳全部乘以1000
+    // 预测数据转换
+    original_request_total_count_predict_data = original_request_total_count_predict_data.map(TimestampsTrans)
+    original_average_response_time_predict_data = original_average_response_time_predict_data.map(TimestampsTrans)
+    original_request_failed_rate_predict_data = original_request_failed_rate_predict_data.map(TimestampsTrans)
+    original_apdex_predict_data = original_apdex_predict_data.map(TimestampsTrans)
+
+    // 历史预测转换
+    original_request_total_count_history_predict_data = original_request_total_count_history_predict_data.map(TimestampsTrans)
+    original_average_response_time_history_predict_data = original_average_response_time_history_predict_data.map(TimestampsTrans)
+    original_request_failed_rate_history_predict_data = original_request_failed_rate_history_predict_data.map(TimestampsTrans)
+    original_apdex_history_predict_data = original_apdex_history_predict_data.map(TimestampsTrans)
+
+    // 历史数据转换
+    original_request_total_count_history_data = original_request_total_count_history_data.map(TimestampsTrans)
+    original_average_response_time_history_data = original_average_response_time_history_data.map(TimestampsTrans)
+    original_request_failed_rate_history_data = original_request_failed_rate_history_data.map(TimestampsTrans)
+    original_apdex_history_data = original_apdex_history_data.map(TimestampsTrans)
+
+    // 4. 返回数据
     return { times,
              apdex,
              request_total_count,
@@ -522,8 +611,29 @@ function SelectUsefulData(time_series_entry){
               request_failed_rate_pred_min,
               request_total_count_pred_min,
 
-
+              // 下面的参数返回的是时间戳和值的是一个pair
+              timestamp_data: {
+                request_total_count: original_request_total_count_history_data,
+                average_response_time: original_average_response_time_history_data,
+                request_failed_rate: original_request_failed_rate_history_data,
+                apdex: original_apdex_history_data,
+                request_total_count_predict: original_request_total_count_predict_data,
+                average_response_time_predict: original_average_response_time_predict_data,
+                request_failed_rate_predict: original_request_failed_rate_predict_data,
+                apdex_predict: original_apdex_predict_data,
+                request_total_count_history_predict: original_request_total_count_history_predict_data,
+                average_response_time_history_predict: original_average_response_time_history_predict_data,
+                request_failed_rate_history_predict: original_request_failed_rate_history_predict_data,
+                apdex_history_predict: original_apdex_history_predict_data,
+              }
             };
+}
+
+
+function convertSeries(raw) {
+  return raw.map(item => {
+    return [ item[0], item[1] ];
+  });
 }
 
 const updateCharts = async () => {
@@ -536,8 +646,9 @@ const updateCharts = async () => {
   try{
 
     const time_series = await time_data_store.get_app_prediction(selectedBusiness.value, selectedApp.value,selectedTime.value)
-    console.log("time series is ", time_series)
+    // console.log("time series is ", time_series)
     loaded_app_data.value = SelectUsefulData(time_series);
+    console.log("timestamp_data is ", loaded_app_data.value.timestamp_data.apdex)
     console.log("loaded app data is ", loaded_app_data.value)
   }
   catch(e){
@@ -594,14 +705,37 @@ const updateCharts = async () => {
     responseTimeChartInstance.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['当前响应时间', '预测响应时间', '历史预测响应时间'] },
-      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-      xAxis: { type: 'category', data: loaded_app_data.value.times },
+      grid: { left: '3%', right: '4%', bottom: '12%', containLabel: true },
+      xAxis: { 
+          type: 'time',
+          axisLabel: {
+          fontSize: 10,
+          // 自动隐藏过密的标签
+          hideOverlap: true,
+          // 控制标签的间隔（0 表示全显示，'auto' 表示自动优化）
+          interval: 'auto',
+          // 旋转标签（如需要）
+          rotate: 30,
+            formatter: value => {
+              const date = new Date(value);
+              const yyyy = date.getFullYear();
+              const MM   = String(date.getMonth()+1).padStart(2,'0');
+              const dd   = String(date.getDate()).padStart(2,'0');
+              const hh   = String(date.getHours()).padStart(2,'0');
+              // 自定义格式，比如 “YYYY-MM-DD HH:mm”
+              return `${yyyy}-${MM}-${dd} ${hh}`;
+            }
+          },
+          splitLine: {
+            show: false
+          }
+      },
       yAxis: { type: 'value', name: '响应时间(ms)' },
       series: [
         {
           name: '当前响应时间',
           type: 'line',
-          data: loaded_app_data.value.average_response_time,
+          data: loaded_app_data.value.timestamp_data.average_response_time,
           smooth: true,
           itemStyle: { color: '#2d8cf0' },
           areaStyle: { opacity: 0.3 }
@@ -609,7 +743,7 @@ const updateCharts = async () => {
         {
           name: '预测响应时间',
           type: 'line',
-          data: loaded_app_data.value.average_response_time_Pred,
+          data: loaded_app_data.value.timestamp_data.average_response_time_predict,
           smooth: true,
           itemStyle: { color: '#19be6b' },
           lineStyle: { type: 'dashed' }
@@ -617,7 +751,7 @@ const updateCharts = async () => {
         {
           name: '历史预测响应时间',
           type: 'line',
-          data: loaded_app_data.value.history_average_response_time_Pred,
+          data: loaded_app_data.value.timestamp_data.average_response_time_history_predict,
           smooth: true,
           itemStyle: { color: '#ed4014' },
           lineStyle: { type: 'solid' }
@@ -632,17 +766,42 @@ const updateCharts = async () => {
     memChartInstance.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['当前apdex', '预测apdex', '历史预测apdex'] },
-      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-      xAxis: { type: 'category', data: loaded_app_data.value.times },
-      yAxis: { type: 'value',
-               name: 'apdex',
-               min: Math.floor(loaded_app_data.value.apdex_range[0]) ,
-               max: Math.ceil(loaded_app_data.value.apdex_range[1]) },
+      grid: { left: '3%', right: '4%', bottom: '12%', containLabel: true },
+      xAxis: { 
+          type: 'time',
+          axisLabel: {
+          fontSize: 10,
+          // 自动隐藏过密的标签
+          hideOverlap: true,
+          // 控制标签的间隔（0 表示全显示，'auto' 表示自动优化）
+          interval: 'auto',
+          // 旋转标签（如需要）
+          rotate: 30,
+            formatter: value => {
+              const date = new Date(value);
+              const yyyy = date.getFullYear();
+              const MM   = String(date.getMonth()+1).padStart(2,'0');
+              const dd   = String(date.getDate()).padStart(2,'0');
+              const hh   = String(date.getHours()).padStart(2,'0');
+              // 自定义格式，比如 “YYYY-MM-DD HH:mm”
+              return `${yyyy}-${MM}-${dd} ${hh}`;
+            }
+          },
+          splitLine: {
+            show: false
+          }
+      },
+      yAxis: { 
+                type: 'value',
+                name: 'apdex',
+                min: 0,
+                max: 1 
+              },
       series: [
         {
           name: '当前apdex',
           type: 'line',
-          data: loaded_app_data.value.apdex,
+          data: loaded_app_data.value.timestamp_data.apdex,
           smooth: true,
           itemStyle: { color: '#ff9900' },
           areaStyle: { opacity: 0.3 }
@@ -650,7 +809,7 @@ const updateCharts = async () => {
         {
           name: '预测apdex',
           type: 'line',
-          data: loaded_app_data.value.apdexPred,
+          data: loaded_app_data.value.timestamp_data.apdex_predict,
           smooth: true,
           itemStyle: { color: '#ed4014' },
           lineStyle: { type: 'dashed' }
@@ -658,7 +817,7 @@ const updateCharts = async () => {
         {
           name: '历史预测apdex',
           type: 'line',
-          data: loaded_app_data.value.history_apdex_Pred,
+          data: loaded_app_data.value.timestamp_data.apdex_history_predict,
           smooth: true,
           itemStyle: { color: '#2d8cf0' },
           lineStyle: { type: 'solid' }
@@ -673,14 +832,37 @@ const updateCharts = async () => {
     diskChartInstance.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['当前错误率', '预测错误率','历史预测错误率'] },
-      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-      xAxis: { type: 'category', data: loaded_app_data.value.times },
+      grid: { left: '3%', right: '4%', bottom: '12%', containLabel: true },
+      xAxis: { 
+          type: 'time',
+          axisLabel: {
+          fontSize: 10,
+          // 自动隐藏过密的标签
+          hideOverlap: true,
+          // 控制标签的间隔（0 表示全显示，'auto' 表示自动优化）
+          interval: 'auto',
+          // 旋转标签（如需要）
+          rotate: 30,
+            formatter: value => {
+              const date = new Date(value);
+              const yyyy = date.getFullYear();
+              const MM   = String(date.getMonth()+1).padStart(2,'0');
+              const dd   = String(date.getDate()).padStart(2,'0');
+              const hh   = String(date.getHours()).padStart(2,'0');
+              // 自定义格式，比如 “YYYY-MM-DD HH:mm”
+              return `${yyyy}-${MM}-${dd} ${hh}`;
+            }
+          },
+          splitLine: {
+            show: false
+          }
+      },
       yAxis: { type: 'value', name: '错误率', min: Math.floor(loaded_app_data.value.request_failed_rate_range[0]), max: Math.ceil(loaded_app_data.value.request_failed_rate_range[1]) },
       series: [
         {
           name: '当前错误率',
           type: 'line',
-          data: loaded_app_data.value.request_failed_rate,
+          data: loaded_app_data.value.timestamp_data.request_failed_rate,
           smooth: true,
           itemStyle: { color: '#9b59b6' },
           areaStyle: { opacity: 0.3 }
@@ -688,7 +870,7 @@ const updateCharts = async () => {
         {
           name: '预测错误率',
           type: 'line',
-          data: loaded_app_data.value.request_failed_rate_Pred,
+          data: loaded_app_data.value.timestamp_data.request_failed_rate_predict,
           smooth: true,
           itemStyle: { color: '#e74c3c' },
           lineStyle: { type: 'dashed' }
@@ -696,7 +878,7 @@ const updateCharts = async () => {
         {
           name: '历史预测错误率',
           type: 'line',
-          data: loaded_app_data.value.history_request_failed_rate_Pred,
+          data: loaded_app_data.value.timestamp_data.request_failed_rate_history_predict,
           smooth: true,
           itemStyle: { color: '#ed4014' },
           lineStyle: { type: 'solid' }
@@ -711,14 +893,37 @@ const updateCharts = async () => {
     networkChartInstance.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: ['当前吞吐量', '预测吞吐量', '历史预测吞吐量'] },
-      grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-      xAxis: { type: 'category', data: loaded_app_data.value.times },
+      grid: { left: '3%', right: '4%', bottom: '12%', containLabel: true },
+      xAxis: { 
+          type: 'time',
+          axisLabel: {
+          fontSize: 10,
+          // 自动隐藏过密的标签
+          hideOverlap: true,
+          // 控制标签的间隔（0 表示全显示，'auto' 表示自动优化）
+          interval: 'auto',
+          // 旋转标签（如需要）
+          rotate: 30,
+            formatter: value => {
+              const date = new Date(value);
+              const yyyy = date.getFullYear();
+              const MM   = String(date.getMonth()+1).padStart(2,'0');
+              const dd   = String(date.getDate()).padStart(2,'0');
+              const hh   = String(date.getHours()).padStart(2,'0');
+              // 自定义格式，比如 “YYYY-MM-DD HH:mm”
+              return `${yyyy}-${MM}-${dd} ${hh}`;
+            }
+          },
+          splitLine: {
+            show: false
+          }
+      },
       yAxis: { type: 'value', name: '吞吐量',   min: Math.floor(loaded_app_data.value.request_total_count_range[0]), max: Math.ceil(loaded_app_data.value.request_total_count_range[1]) },
       series: [
         {
           name: '当前吞吐量',
           type: 'line',
-          data: loaded_app_data.value.request_total_count,
+          data: loaded_app_data.value.timestamp_data.request_total_count,
           smooth: true,
           itemStyle: { color: '#1abc9c' },
           areaStyle: { opacity: 0.3 }
@@ -726,7 +931,7 @@ const updateCharts = async () => {
         {
           name: '预测吞吐量',
           type: 'line',
-          data: loaded_app_data.value.request_total_count_Pred,
+          data: loaded_app_data.value.timestamp_data.request_total_count_predict,
           smooth: true,
           itemStyle: { color: '#3498db' },
           lineStyle: { type: 'dashed' }
@@ -734,7 +939,7 @@ const updateCharts = async () => {
         {
           name: '历史预测吞吐量',
           type: 'line',
-          data: loaded_app_data.value.history_request_total_count_Pred,
+          data: loaded_app_data.value.timestamp_data.request_total_count_history_predict,
           smooth: true,
           itemStyle: { color: '#ed4014' },
           lineStyle: { type: 'solid' }
